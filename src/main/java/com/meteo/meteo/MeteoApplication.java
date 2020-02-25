@@ -1,11 +1,8 @@
 package com.meteo.meteo;
 
-import com.meteo.meteo.service.Servizio;
-import org.json.JSONException;
+import com.meteo.meteo.service.MeteoService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.io.IOException;
 
 @SpringBootApplication
 public class MeteoApplication {
@@ -16,20 +13,20 @@ public class MeteoApplication {
 
         SpringApplication.run(MeteoApplication.class, args);
 
-        Servizio servizio = new Servizio();
+        MeteoService servizio = new MeteoService();
 
 
-        servizio.getCity("London", "uk", "GB");
+        servizio.getCity();
 
-        servizio.getCoordinate("139","35");
+        servizio.getCoordinate();
 
-        servizio.getZipCode("46047","it");
+        servizio.getZipCode();
 
-        servizio.get5DaysCity("Milan", "it", "IT");
+        servizio.get5DaysCity();
 
-        servizio.get5DaysCoordinate("139","35");
+        servizio.get5DaysCoordinate();
 
-        servizio.get5DaysZipCode("46047","it");
+        servizio.get5DaysZipCode();
 
     }
 

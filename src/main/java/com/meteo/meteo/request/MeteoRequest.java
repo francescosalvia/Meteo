@@ -1,6 +1,6 @@
 package com.meteo.meteo.request;
 
-public class Meteo {
+public class MeteoRequest {
 
 
     private String citta;
@@ -8,7 +8,7 @@ public class Meteo {
     private String country;
     private String cap;
     private String coordinate;
-    private String cognome;
+
 
 
     public String getCitta() {
@@ -51,11 +51,4 @@ public class Meteo {
         this.coordinate = coordinate;
     }
 
-    public String getCognome() {
-        return cognome;
-    }
-
-    public void setCognome(String cognome) {
-        this.cognome = cognome;
-    }
 }
