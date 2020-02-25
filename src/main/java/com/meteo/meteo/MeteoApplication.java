@@ -1,6 +1,7 @@
 package com.meteo.meteo;
 
 import com.meteo.meteo.service.MeteoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -13,21 +14,6 @@ public class MeteoApplication {
 
         SpringApplication.run(MeteoApplication.class, args);
 
-        MeteoService servizio = new MeteoService();
-
-
-        servizio.getCity();
-
-        servizio.getCoordinate();
-
-        servizio.getZipCode();
-
-        servizio.get5DaysCity();
-
-        servizio.get5DaysCoordinate();
-
-        servizio.get5DaysZipCode();
 
     }
-
 }

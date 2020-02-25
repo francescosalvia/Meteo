@@ -2,58 +2,112 @@ package com.meteo.meteo.data;
 
 public class Weather {
 
-	private String citta;
-	private String stato;
-	private String country;
-	private String zipCode;
-	private String lat;
-	private String lon;
+    private String weatherDescription;
+	private  float temp;
+	private  float feelsLike;
+	private  float tempMin;
+	private  float tempMax;
+	private   int pressure;
+	private   int humidity;
+	private   int visibility;
+	private   int sunrise;
+	private   int sunset;
+	private Coordinate coordinate;
+	private Location location;
 
-	public String getCitta() {
-		return citta;
+	public String getWeatherDescription() {
+		return weatherDescription;
 	}
 
-	public void setCitta(String citta) {
-		this.citta = citta;
+	public void setWeatherDescription(String weatherDescription) {
+		this.weatherDescription = weatherDescription;
 	}
 
-	public String getStato() {
-		return stato;
+	public float getTemp() {
+		return temp;
 	}
 
-	public void setStato(String stato) {
-		this.stato = stato;
+	public void setTemp(float temp) {
+		this.temp = temp;
 	}
 
-	public String getCountry() {
-		return country;
+	public float getFeelsLike() {
+		return feelsLike;
 	}
 
-	public void setCountry(String country) {
-		this.country = country;
+	public void setFeelsLike(float feelsLike) {
+		this.feelsLike = feelsLike;
 	}
 
-	public String getZipCode() {
-		return zipCode;
+	public float getTempMin() {
+		return tempMin;
 	}
 
-	public void setZipCode(String zipCode) {
-		this.zipCode = zipCode;
+	public void setTempMin(float tempMin) {
+		this.tempMin = tempMin;
 	}
 
-	public String getLat() {
-		return lat;
+	public float getTempMax() {
+		return tempMax;
 	}
 
-	public void setLat(String lat) {
-		this.lat = lat;
+	public void setTempMax(float tempMax) {
+		this.tempMax = tempMax;
 	}
 
-	public String getLon() {
-		return lon;
+	public int getPressure() {
+		return pressure;
 	}
 
-	public void setLon(String lon) {
-		this.lon = lon;
+	public void setPressure(int pressure) {
+		this.pressure = pressure;
+	}
+
+	public int getHumidity() {
+		return humidity;
+	}
+
+	public void setHumidity(int humidity) {
+		this.humidity = humidity;
+	}
+
+	public int getVisibility() {
+		return visibility;
+	}
+
+	public void setVisibility(int visibility) {
+		this.visibility = visibility;
+	}
+
+	public int getSunrise() {
+		return sunrise;
+	}
+
+	public void setSunrise(int sunrise) {
+		this.sunrise = sunrise;
+	}
+
+	public int getSunset() {
+		return sunset;
+	}
+
+	public void setSunset(int sunset) {
+		this.sunset = sunset;
+	}
+
+	public Coordinate getCoordinate() {
+		return coordinate;
+	}
+
+	public void setCoordinate(Coordinate coordinate) {
+		this.coordinate = coordinate;
+	}
+
+	public Location getLocation() {
+		return location;
+	}
+
+	public void setLocation(Location location) {
+		this.location = location;
 	}
 }
