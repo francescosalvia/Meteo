@@ -23,7 +23,7 @@ import java.net.URISyntaxException;
 public class MeteoService {
 
     @Autowired
-    MeteoProperties meteoProperties;
+    private MeteoProperties meteoProperties;
 
     private static final Logger logger = LoggerFactory.getLogger(MeteoService.class);
     private final String token = "b4221c34a141ac2934e8e24c22696d91";
