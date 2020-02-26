@@ -1,5 +1,7 @@
 package com.meteo.meteo.data;
 
+import java.time.LocalDateTime;
+
 public class Weather {
 
     private String weatherDescription;
@@ -14,6 +16,7 @@ public class Weather {
 	private   int sunset;
 	private Coordinate coordinate;
 	private Location location;
+	LocalDateTime dtTxt;
 
 	public String getWeatherDescription() {
 		return weatherDescription;
@@ -109,5 +112,13 @@ public class Weather {
 
 	public void setLocation(Location location) {
 		this.location = location;
+	}
+
+	public LocalDateTime getDtTxt() {
+		return dtTxt;
+	}
+
+	public void setDtTxt(LocalDateTime dtTxt) {
+		this.dtTxt = dtTxt;
 	}
 }

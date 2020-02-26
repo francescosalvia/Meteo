@@ -1,9 +1,13 @@
 package com.meteo.meteo.controller;
 
+import com.meteo.meteo.data.Forecast;
+import com.meteo.meteo.data.GenericResponse;
 import com.meteo.meteo.data.Weather;
 import com.meteo.meteo.service.MeteoService;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,76 +20,79 @@ public class MeteoController {
     MeteoService service;
 
     @GetMapping("/city")
-    public Object city(){
+    public ResponseEntity<GenericResponse> city(){
         Optional<Weather> result = service.getCity();
 
         if (result.isPresent()){
-            return result.get();
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
 
     }
 
     @GetMapping("/coordinate")
-    public String coordinate(){
-        String result = service.getCoordinate();
+    public ResponseEntity<GenericResponse> coordinate(){
+        Optional<Weather> result = service.getCoordinate();
 
-        if (result != null){
-
-            return result;
+        if (result.isPresent()){
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
 
     }
 
     @GetMapping("/cap")
-    public String cap(){
-        String result = service.getZipCode();
+    public ResponseEntity<GenericResponse> cap(){
+        Optional<Weather> result = service.getZipCode();
 
-        if (result != null){
-
-            return result;
+        if (result.isPresent()){
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
 
     }
 
     @GetMapping("/city5day")
-    public String city5Days(){
-        String result = service.get5DaysCity();
+    public ResponseEntity<GenericResponse> city5Days(){
+        Optional<Forecast> result = service.get5DaysCity();
 
-        if (result != null){
-            return result;
+        if (result.isPresent()){
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
+
 
     }
 
     @GetMapping("/coordinate5day")
-    public String coordinate5Days(){
+    public ResponseEntity<GenericResponse> coordinate5Days(){
 
-        String result = service.get5DaysCoordinate();
-        if (result != null){
-            return result;
+        Optional<Forecast> result = service.get5DaysCoordinate();
+
+        if (result.isPresent()){
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
+
 
     }
 
     @GetMapping("/cap5day")
-    public String cap5Days(){
+    public ResponseEntity<GenericResponse> cap5Days(){
 
-        String result = service.get5DaysZipCode();
-        if (result != null){
-            return result;
+        Optional<Forecast> result = service.get5DaysZipCode();
+
+        if (result.isPresent()){
+            return ResponseEntity.ok(new GenericResponse("Servizio meteo disponibile!", result.get()));
         } else {
-            return "Servizio meteo non disponibile";
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(GenericResponse.failed("Servizio meteo non disponibile"));
         }
+
 
     }
 
