@@ -2,13 +2,8 @@ package com.meteo.meteo.data;
 
 import javax.persistence.*;
 
-@Entity
-@Table(name="weather")
+
 public class Weather {
-	@Id
-	@GeneratedValue(strategy= GenerationType.AUTO)
-	@Column(name = "id")
-	private int id;
     private String weatherDescription;
 	private  float temp;
 	private  float feelsLike;
@@ -19,17 +14,9 @@ public class Weather {
 	private   int visibility;
 	private   int sunrise;
 	private   int sunset;
-
 	private Coordinate coordinate;
 	private Location location;
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
 
 	public String getWeatherDescription() {
 		return weatherDescription;

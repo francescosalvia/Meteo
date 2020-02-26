@@ -8,7 +8,6 @@ import com.meteo.meteo.repository.WeatherRepository;
 import org.apache.http.ParseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -23,9 +22,7 @@ import org.springframework.web.util.UriTemplate;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -71,7 +68,7 @@ public class MeteoService {
         return (float) jObj.getDouble(tagName);
     }
 
-    private static int getInt(String tagName, JSONObject jObj)  {
+    private static int getInt(String tagName, JSONObject jObj) {
         try {
             return jObj.getInt(tagName);
         } catch (JSONException e) {
@@ -129,14 +126,12 @@ public class MeteoService {
             weather.setLocation(loc);
 
 
-
             return Optional.of(weather);
         } catch (JSONException e) {
             logger.error("Eccezione JSONException in getCity ", e);
         }
         return Optional.empty();
     }
-
 
 
     public Optional<Forecast> createWether5Days(JSONObject myObject) {
@@ -161,7 +156,7 @@ public class MeteoService {
 
             ArrayList<ForecastListInfo> listInfo = new ArrayList<>();
 
-            for(int i = 0; i < jArr.length(); i++){
+            for (int i = 0; i < jArr.length(); i++) {
 
                 ForecastListInfo forecastListInfo = new ForecastListInfo();
                 JSONObject JSONArray = jArr.getJSONObject(i);
@@ -199,26 +194,44 @@ public class MeteoService {
     }
 
 
-    public void addCoordinate(Weather weather) {
+    public WeatherDb addWeather(Weather weather,String tipo) {
+        WeatherDb weatherDb = new WeatherDb();
+        weatherDb.setFeelsLike(weather.getFeelsLike());
+        weatherDb.setTemp(weather.getTemp());
+        weatherDb.setHumidity(weather.getHumidity());
+        weatherDb.setPressure(weather.getPressure());
+        weatherDb.setTempMax(weather.getTempMax());
+        weatherDb.setTempMin(weather.getTempMin());
+        weatherDb.setVisibility(weather.getVisibility());
+        weatherDb.setSunrise(weather.getSunrise());
+        weatherDb.setSunset(weather.getSunset());
+        weatherDb.setWeatherDescription(weather.getWeatherDescription());
+        weatherDb.setTipoMetodo(tipo);
+        return weatherRepository.save(weatherDb);
+    }
+
+    public void addCoordinate(Weather weather, int id) {
         Coordinate coordinate = new Coordinate();
         coordinate.setLat(weather.getCoordinate().getLat());
         coordinate.setLon(weather.getCoordinate().getLon());
-        coordinate.setIdWeather(weather.getId());
+        coordinate.setIdWeather(id);
         coordinateRepository.save(coordinate);
     }
 
-    public void addLocation(Weather weather) {
+    public void addLocation(Weather weather, int id) {
         Location location = new Location();
 
         location.setTimezone(weather.getLocation().getTimezone());
         location.setCitta(weather.getLocation().getCitta());
         location.setCountry(weather.getLocation().getCountry());
-        location.setIdWeather(weather.getId());
+        location.setIdWeather(id);
         locationRepository.save(location);
     }
 
 
-    /** SERVIZIOOOOO **/
+    /**
+     * SERVIZIOOOOO
+     **/
 
 
     public Optional<Weather> getCity() {
@@ -240,10 +253,10 @@ public class MeteoService {
 
             Optional<Weather> weather = createWether(myObject);
 
-            if(weather.isPresent()) {
-                Weather weather1 = weatherRepository.save(weather.get());
-                addCoordinate(weather1);
-                addLocation(weather1);
+            if (weather.isPresent()) {
+                WeatherDb weather1 = addWeather(weather.get(),"city");
+                addCoordinate(weather.get(), weather1.getId());
+                addLocation(weather.get(), weather1.getId());
             }
 
             logger.info(json2);
@@ -279,6 +292,13 @@ public class MeteoService {
 
             Optional<Weather> weather = createWether(myObject);
 
+            if (weather.isPresent()) {
+                WeatherDb weather1 = addWeather(weather.get(),"coordinate");
+                addCoordinate(weather.get(), weather1.getId());
+                addLocation(weather.get(), weather1.getId());
+            }
+
+
             logger.info(json2);
             client.close();
 
@@ -311,6 +331,12 @@ public class MeteoService {
             JSONObject myObject = new JSONObject(json2);
 
             Optional<Weather> weather = createWether(myObject);
+
+            if (weather.isPresent()) {
+                WeatherDb weather1 = addWeather(weather.get(),"zipCode");
+                addCoordinate(weather.get(), weather1.getId());
+                addLocation(weather.get(), weather1.getId());
+            }
 
             logger.info(json2);
             client.close();
@@ -428,7 +454,6 @@ public class MeteoService {
         }
         return Optional.empty();
     }
-
 
 
 }
