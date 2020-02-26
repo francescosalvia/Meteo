@@ -2,6 +2,9 @@ package com.meteo.meteo.service;
 
 import com.meteo.meteo.data.*;
 import com.meteo.meteo.properties.MeteoProperties;
+import com.meteo.meteo.repository.CoordinateRepository;
+import com.meteo.meteo.repository.LocationRepository;
+import com.meteo.meteo.repository.WeatherRepository;
 import org.apache.http.ParseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -40,6 +43,15 @@ public class MeteoService {
 
     private static final String WEATHER_URL =
             "http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={key}";
+
+    @Autowired
+    private WeatherRepository weatherRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
+
+    @Autowired
+    private CoordinateRepository coordinateRepository;
 
 
     /**
@@ -116,6 +128,8 @@ public class MeteoService {
             weather.setCoordinate(co);
             weather.setLocation(loc);
 
+
+
             return Optional.of(weather);
         } catch (JSONException e) {
             logger.error("Eccezione JSONException in getCity ", e);
@@ -185,6 +199,25 @@ public class MeteoService {
     }
 
 
+    public void addCoordinate(Weather weather) {
+        Coordinate coordinate = new Coordinate();
+        coordinate.setLat(weather.getCoordinate().getLat());
+        coordinate.setLon(weather.getCoordinate().getLon());
+        coordinate.setIdWeather(weather.getId());
+        coordinateRepository.save(coordinate);
+    }
+
+    public void addLocation(Weather weather) {
+        Location location = new Location();
+
+        location.setTimezone(weather.getLocation().getTimezone());
+        location.setCitta(weather.getLocation().getCitta());
+        location.setCountry(weather.getLocation().getCountry());
+        location.setIdWeather(weather.getId());
+        locationRepository.save(location);
+    }
+
+
     /** SERVIZIOOOOO **/
 
 
@@ -206,6 +239,12 @@ public class MeteoService {
             JSONObject myObject = new JSONObject(json2);
 
             Optional<Weather> weather = createWether(myObject);
+
+            if(weather.isPresent()) {
+                Weather weather1 = weatherRepository.save(weather.get());
+                addCoordinate(weather1);
+                addLocation(weather1);
+            }
 
             logger.info(json2);
             client.close();
