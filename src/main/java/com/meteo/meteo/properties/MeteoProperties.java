@@ -8,59 +8,23 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "mtconfig")
 public class MeteoProperties {
 
-    private String citta;
-    private String stato;
-    private String country;
-    private String cap;
-    private String latitudine;
-    private String longitudine;
 
-    public String getCitta() {
-        return citta;
+    private String apikey;
+    private String urlWeather;
+
+    public String getApikey() {
+        return apikey;
     }
 
-    public void setCitta(String citta) {
-        this.citta = citta;
+    public void setApikey(String apikey) {
+        this.apikey = apikey;
     }
 
-    public String getStato() {
-        return stato;
+    public String getUrlWeather() {
+        return urlWeather;
     }
 
-    public void setStato(String stato) {
-        this.stato = stato;
+    public void setUrlWeather(String urlWeather) {
+        this.urlWeather = urlWeather;
     }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getCap() {
-        return cap;
-    }
-
-    public void setCap(String cap) {
-        this.cap = cap;
-    }
-
-    public String getLatitudine() {
-        return latitudine;
-    }
-
-    public void setLatitudine(String latitudine) {
-        this.latitudine = latitudine;
-    }
-
-    public String getLongitudine() {
-        return longitudine;
-    }
-
-    public void setLongitudine(String longitudine) {
-        this.longitudine = longitudine;
-    }
-
 }

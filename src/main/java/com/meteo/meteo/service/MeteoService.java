@@ -1,10 +1,12 @@
 package com.meteo.meteo.service;
 
+import com.google.common.collect.Iterables;
 import com.meteo.meteo.data.*;
 import com.meteo.meteo.properties.MeteoProperties;
 import com.meteo.meteo.repository.CoordinateRepository;
 import com.meteo.meteo.repository.LocationRepository;
 import com.meteo.meteo.repository.WeatherRepository;
+import com.meteo.meteo.request.MeteoRequest;
 import org.apache.http.ParseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -24,7 +26,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -35,8 +39,6 @@ public class MeteoService {
 
     private static final Logger logger = LoggerFactory.getLogger(MeteoService.class);
     private final String token = "b4221c34a141ac2934e8e24c22696d91";
-
-    private String apiKey = "b4221c34a141ac2934e8e24c22696d91";
 
     private static final String WEATHER_URL =
             "http://api.openweathermap.org/data/2.5/weather?q={city}&APPID={key}";
@@ -55,17 +57,32 @@ public class MeteoService {
      * METODI UTILI
      **/
 
-    private static JSONObject getObject(String tagName, JSONObject jObj) throws JSONException {
-        JSONObject subObj = jObj.getJSONObject(tagName);
-        return subObj;
+    private static JSONObject getObject(String tagName, JSONObject jObj) {
+        try {
+            JSONObject subObj = jObj.getJSONObject(tagName);
+            return subObj;
+        } catch (JSONException e) {
+            logger.error("Eccezione JSONException in getObject ", e);
+        }
+        return null;
     }
 
     private static String getString(String tagName, JSONObject jObj) throws JSONException {
-        return jObj.getString(tagName);
+        try {
+            return jObj.getString(tagName);
+        } catch (JSONException e) {
+            logger.error("Eccezione JSONException in getString ", e);
+        }
+        return null;
     }
 
     private static float getFloat(String tagName, JSONObject jObj) throws JSONException {
-        return (float) jObj.getDouble(tagName);
+        try {
+            return (float) jObj.getDouble(tagName);
+        } catch (JSONException e) {
+            logger.error("Eccezione JSONException in getFloat ", e);
+        }
+        return 0;
     }
 
     private static int getInt(String tagName, JSONObject jObj) {
@@ -194,7 +211,7 @@ public class MeteoService {
     }
 
 
-    public WeatherDb addWeather(Weather weather,String tipo) {
+    public WeatherDb addWeather(Weather weather, String tipo) {
         WeatherDb weatherDb = new WeatherDb();
         weatherDb.setFeelsLike(weather.getFeelsLike());
         weatherDb.setTemp(weather.getTemp());
@@ -207,26 +224,152 @@ public class MeteoService {
         weatherDb.setSunset(weather.getSunset());
         weatherDb.setWeatherDescription(weather.getWeatherDescription());
         weatherDb.setTipoMetodo(tipo);
+        weatherDb.setScadenza(LocalDateTime.now().plusMinutes(120));
+
         return weatherRepository.save(weatherDb);
     }
 
-    public void addCoordinate(Weather weather, int id) {
+    public void addCoordinate(Weather weather, int id, String tipo) {
         Coordinate coordinate = new Coordinate();
         coordinate.setLat(weather.getCoordinate().getLat());
         coordinate.setLon(weather.getCoordinate().getLon());
         coordinate.setIdWeather(id);
+        coordinate.setTipo(tipo);
+        coordinate.setScadenza(LocalDateTime.now().plusMinutes(120));
         coordinateRepository.save(coordinate);
     }
 
-    public void addLocation(Weather weather, int id) {
+    public void addLocation(Weather weather, int id, String tipo) {
         Location location = new Location();
 
         location.setTimezone(weather.getLocation().getTimezone());
         location.setCitta(weather.getLocation().getCitta());
         location.setCountry(weather.getLocation().getCountry());
         location.setIdWeather(id);
+        location.setTipo(tipo);
+        location.setScadenza(LocalDateTime.now().plusMinutes(120));
         locationRepository.save(location);
     }
+
+    public void addLocationZipCode(Weather weather, int id, String tipo,String zipcode) {
+        Location location = new Location();
+
+        location.setTimezone(weather.getLocation().getTimezone());
+        location.setCitta(weather.getLocation().getCitta());
+        location.setCountry(weather.getLocation().getCountry());
+        location.setIdWeather(id);
+        location.setTipo(tipo);
+        location.setScadenza(LocalDateTime.now().plusMinutes(120));
+        location.setZipCode(zipcode);
+        locationRepository.save(location);
+    }
+
+
+    public Optional<Weather> returnDB(WeatherDb lastElement) {
+
+        Optional<Coordinate> coordinateDB = coordinateRepository.findCoordinateByIdWeather(lastElement.getId());
+        Optional<Location> locationDB = locationRepository.findLocationByIdWeather(lastElement.getId());
+        if (coordinateDB.isPresent()) {
+            Coordinate coordinate = coordinateDB.get();
+            if (locationDB.isPresent()) {
+                Location location = locationDB.get();
+
+                Weather weatherReturn = new Weather();
+
+                weatherReturn.setVisibility(lastElement.getVisibility());
+                weatherReturn.setSunrise(lastElement.getSunrise());
+                weatherReturn.setSunset(lastElement.getSunset());
+                weatherReturn.setPressure(lastElement.getPressure());
+                weatherReturn.setFeelsLike(lastElement.getFeelsLike());
+                weatherReturn.setWeatherDescription(lastElement.getWeatherDescription());
+                weatherReturn.setTemp(lastElement.getTemp());
+                weatherReturn.setTempMax(lastElement.getTempMax());
+                weatherReturn.setTempMin(lastElement.getTempMin());
+                weatherReturn.setLocation(location);
+                weatherReturn.setCoordinate(coordinate);
+
+                return Optional.of(weatherReturn);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+    public Optional<Weather> searchDBCity(String tipo, String citta) {
+
+        List<WeatherDb> weatherDb = new ArrayList<>();
+
+        List<Location> listCitta = locationRepository.findLocationByCitta(citta);
+        if (listCitta.size() > 0) {
+            Location lastCitta = Iterables.getLast(listCitta);
+            weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastCitta.getIdWeather());
+        }
+
+        if (weatherDb.size() > 0) {
+            WeatherDb lastElement = Iterables.getLast(weatherDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                return returnDB(lastElement);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+    public Optional<Weather> searchDBCoordinate(String tipo, float latitudine, float longitudine) {
+
+        List<WeatherDb> weatherDb = new ArrayList<>();
+
+        List<Coordinate> listCoordinate = coordinateRepository.findCoordinateByTipoAndLatAndLon(tipo,latitudine,longitudine);
+        if (listCoordinate.size() > 0) {
+            Coordinate lastCoord = Iterables.getLast(listCoordinate);
+            weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastCoord.getIdWeather());
+        }
+
+        if (weatherDb.size() > 0) {
+            WeatherDb lastElement = Iterables.getLast(weatherDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                return returnDB(lastElement);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+
+    public Optional<Weather> searchDBZipCode(String tipo, String zipcode) {
+
+        List<WeatherDb> weatherDb = new ArrayList<>();
+
+        List<Location> locations = locationRepository.findLocationByTipoAndZipCode(tipo,zipcode);
+        if (locations.size() > 0) {
+            Location lastZip = Iterables.getLast(locations);
+            weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastZip.getIdWeather());
+        }
+
+        if (weatherDb.size() > 0) {
+            WeatherDb lastElement = Iterables.getLast(weatherDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                return returnDB(lastElement);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+
+
 
 
     /**
@@ -234,13 +377,20 @@ public class MeteoService {
      **/
 
 
-    public Optional<Weather> getCity() {
+    public Optional<Weather> getCity(MeteoRequest mr) {
+
+        Optional<Weather> weatherSearch = searchDBCity("city", mr.getCitta());
+
+        if (weatherSearch.isPresent()) {
+            return weatherSearch;
+        }
+
         logger.info("getCity");
-        String meteo_url = "http://api.openweathermap.org/data/2.5/weather?q={city name},{state},{country code}&appid={your api key}";
+        String meteo_url = meteoProperties.getUrlWeather() + "q={city name},{state},{country code}&appid={your api key}";
 
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getCitta(), meteoProperties.getStato()
-                    , meteoProperties.getCountry(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getCitta(), mr.getStato()
+                    , mr.getCountry(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);
@@ -254,9 +404,9 @@ public class MeteoService {
             Optional<Weather> weather = createWether(myObject);
 
             if (weather.isPresent()) {
-                WeatherDb weather1 = addWeather(weather.get(),"city");
-                addCoordinate(weather.get(), weather1.getId());
-                addLocation(weather.get(), weather1.getId());
+                WeatherDb weather1 = addWeather(weather.get(), "city");
+                addCoordinate(weather.get(), weather1.getId(),"city");
+                addLocation(weather.get(), weather1.getId(),"city");
             }
 
             logger.info(json2);
@@ -274,12 +424,19 @@ public class MeteoService {
     }
 
 
-    public Optional<Weather> getCoordinate() {
+    public Optional<Weather> getCoordinate(MeteoRequest mr) {
+
+        Optional<Weather> weatherSearch = searchDBCoordinate("coordinate",mr.getLatitudine(),mr.getLongitudine());
+
+        if (weatherSearch.isPresent()) {
+            return weatherSearch;
+        }
+
         logger.info("getCoordinate");
-        String meteo_url = "http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={your api key}";
+        String meteo_url = meteoProperties.getUrlWeather() + "lat={lat}&lon={lon}&appid={your api key}";
         String result = null;
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getLatitudine(), meteoProperties.getLongitudine(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getLatitudine(), mr.getLongitudine(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);
@@ -293,9 +450,9 @@ public class MeteoService {
             Optional<Weather> weather = createWether(myObject);
 
             if (weather.isPresent()) {
-                WeatherDb weather1 = addWeather(weather.get(),"coordinate");
-                addCoordinate(weather.get(), weather1.getId());
-                addLocation(weather.get(), weather1.getId());
+                WeatherDb weather1 = addWeather(weather.get(), "coordinate");
+                addCoordinate(weather.get(), weather1.getId(),"coordinate");
+                addLocation(weather.get(), weather1.getId(),"coordinate");
             }
 
 
@@ -314,12 +471,19 @@ public class MeteoService {
         return Optional.empty();
     }
 
-    public Optional<Weather> getZipCode() {
+    public Optional<Weather> getZipCode(MeteoRequest mr) {
+
+        Optional<Weather> weatherSearch = searchDBZipCode("zipCode",mr.getCap());
+
+        if (weatherSearch.isPresent()) {
+            return weatherSearch;
+        }
+
         logger.info("getZipCode");
-        String meteo_url = "http://api.openweathermap.org/data/2.5/weather?zip={zip code},{country code}&appid={your api key}";
+        String meteo_url = meteoProperties.getUrlWeather() + "zip={zip code},{country code}&appid={your api key}";
         String result = null;
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getCap(), meteoProperties.getCountry(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getCap(), mr.getCountry(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);
@@ -333,9 +497,9 @@ public class MeteoService {
             Optional<Weather> weather = createWether(myObject);
 
             if (weather.isPresent()) {
-                WeatherDb weather1 = addWeather(weather.get(),"zipCode");
-                addCoordinate(weather.get(), weather1.getId());
-                addLocation(weather.get(), weather1.getId());
+                WeatherDb weather1 = addWeather(weather.get(), "zipCode");
+                addCoordinate(weather.get(), weather1.getId(),"zipCode");
+                addLocationZipCode(weather.get(), weather1.getId(),"zipCode",mr.getCap());
             }
 
             logger.info(json2);
@@ -354,13 +518,13 @@ public class MeteoService {
     }
 
 
-    public Optional<Forecast> get5DaysCity() {
+    public Optional<Forecast> get5DaysCity(MeteoRequest mr) {
         logger.info("get5DaysCity");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?q={city name},{state},{country code}&appid={your api key}";
         String result = null;
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getCitta(), meteoProperties.getStato()
-                    , meteoProperties.getCountry(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getCitta(), mr.getStato(),
+                    mr.getCountry(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);
@@ -388,12 +552,12 @@ public class MeteoService {
     }
 
 
-    public Optional<Forecast> get5DaysCoordinate() {
+    public Optional<Forecast> get5DaysCoordinate(MeteoRequest mr) {
         logger.info("get5DaysCoordinate");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={your api key}";
         String result = null;
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getLatitudine(), meteoProperties.getLongitudine(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getLatitudine(), mr.getLongitudine(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);
@@ -421,12 +585,12 @@ public class MeteoService {
         return Optional.empty();
     }
 
-    public Optional<Forecast> get5DaysZipCode() {
+    public Optional<Forecast> get5DaysZipCode(MeteoRequest mr) {
         logger.info("get5DaysZipCode");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?zip={zip code},{country code}&appid={your api key}";
         String result = null;
         try {
-            URI url = new UriTemplate(meteo_url).expand(meteoProperties.getCap(), meteoProperties.getCountry(), this.apiKey);
+            URI url = new UriTemplate(meteo_url).expand(mr.getCap(), mr.getCountry(), meteoProperties.getApikey());
 
             CloseableHttpClient client = HttpClients.createDefault();
             HttpPost httpPost = new HttpPost(url);

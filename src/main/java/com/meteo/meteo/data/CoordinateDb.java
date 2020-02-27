@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="coordinate")
-public class Coordinate {
+public class CoordinateDb {
+
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -16,7 +17,7 @@ public class Coordinate {
     private int idWeather;
     private String tipo;
     private LocalDateTime scadenza;
-    public Coordinate() {
+    public CoordinateDb() {
     }
 
     public int getIdCoord() {

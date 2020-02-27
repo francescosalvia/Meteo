@@ -1,6 +1,7 @@
 package com.meteo.meteo.data;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "weather")
@@ -25,6 +26,15 @@ public class WeatherDb {
     private int sunset;
     @Column(name = "tipo_metodo")
     private String tipoMetodo;
+    private LocalDateTime scadenza;
+
+    public LocalDateTime getScadenza() {
+        return scadenza;
+    }
+
+    public void setScadenza(LocalDateTime scadenza) {
+        this.scadenza = scadenza;
+    }
 
     public String getTipoMetodo() {
         return tipoMetodo;

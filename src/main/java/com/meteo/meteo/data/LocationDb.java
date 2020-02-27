@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name="location")
-public class Location {
+public class LocationDb {
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -20,7 +20,7 @@ public class Location {
     @Column(name = "zip_code")
     private String zipCode;
 
-    public Location() {
+    public LocationDb() {
     }
 
     public int getIdLocation() {
@@ -87,3 +87,5 @@ public class Location {
         this.zipCode = zipCode;
     }
 }
+
+

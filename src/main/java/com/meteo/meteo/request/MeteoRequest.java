@@ -1,13 +1,21 @@
 package com.meteo.meteo.request;
 
+import javax.validation.constraints.NotNull;
+
 public class MeteoRequest {
 
 
     private String citta;
+
     private String stato;
+
     private String country;
+
     private String cap;
-    private String coordinate;
+
+    private float latitudine;
+
+    private float longitudine;
 
 
 
@@ -43,12 +51,19 @@ public class MeteoRequest {
         this.cap = cap;
     }
 
-    public String getCoordinate() {
-        return coordinate;
+    public float getLatitudine() {
+        return latitudine;
     }
 
-    public void setCoordinate(String coordinate) {
-        this.coordinate = coordinate;
+    public void setLatitudine(float latitudine) {
+        this.latitudine = latitudine;
     }
 
+    public float getLongitudine() {
+        return longitudine;
+    }
+
+    public void setLongitudine(float longitudine) {
+        this.longitudine = longitudine;
+    }
 }
