@@ -12,6 +12,7 @@ public class LocationDb {
     @Column(name = "id_location")
     private int idLocation;
     private int idWeather;
+    private int idForecast;
     int timezone;
     String citta;
     String country;
@@ -21,6 +22,14 @@ public class LocationDb {
     private String zipCode;
 
     public LocationDb() {
+    }
+
+    public int getIdForecast() {
+        return idForecast;
+    }
+
+    public void setIdForecast(int idForecast) {
+        this.idForecast = idForecast;
     }
 
     public int getIdLocation() {

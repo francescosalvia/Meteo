@@ -1,7 +1,7 @@
 package com.meteo.meteo.data;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Forecast {
 
@@ -10,14 +10,14 @@ public class Forecast {
     private Location location;
     private int sunrise;
     private int sunset;
-    private ArrayList<ForecastListInfo> listInfo;
+    private List<ForecastListInfo> listInfo;
 
 
-    public ArrayList<ForecastListInfo> getListInfo() {
+    public List<ForecastListInfo> getListInfo() {
         return listInfo;
     }
 
-    public void setListInfo(ArrayList<ForecastListInfo> listInfo) {
+    public void setListInfo(List<ForecastListInfo> listInfo) {
         this.listInfo = listInfo;
     }
 

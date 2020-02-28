@@ -1,10 +1,15 @@
 package com.meteo.meteo.data;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
-public class ForecastListInfo {
+@Entity
+@Table(name="forecast_list_info")
+public class ForecastListInfoDb {
 
-    private int idList;
+
+    @Column(name = "id_forecast")
+    private int idForecast;
     private String weatherDescription;
     private float temp;
     private float feelsLike;
@@ -13,7 +18,23 @@ public class ForecastListInfo {
     private int pressure;
     private int humidity;
     private LocalDateTime dtTxt;
+    private int idList;
 
+    @Id
+    @GeneratedValue(strategy= GenerationType.AUTO)
+    @Column(name = "id_elemento")
+    private int idElemento;
+
+    public ForecastListInfoDb() {
+    }
+
+    public int getIdElemento() {
+        return idElemento;
+    }
+
+    public void setIdElemento(int idElemento) {
+        this.idElemento = idElemento;
+    }
 
     public int getIdList() {
         return idList;
@@ -21,6 +42,22 @@ public class ForecastListInfo {
 
     public void setIdList(int idList) {
         this.idList = idList;
+    }
+
+    public int getIdForecast() {
+        return idForecast;
+    }
+
+    public void setIdForecast(int idForecast) {
+        this.idForecast = idForecast;
+    }
+
+    public LocalDateTime getDtTxt() {
+        return dtTxt;
+    }
+
+    public void setDtTxt(LocalDateTime dtTxt) {
+        this.dtTxt = dtTxt;
     }
 
     public String getWeatherDescription() {
@@ -79,11 +116,4 @@ public class ForecastListInfo {
         this.humidity = humidity;
     }
 
-    public LocalDateTime getDtTxt() {
-        return dtTxt;
-    }
-
-    public void setDtTxt(LocalDateTime dtTxt) {
-        this.dtTxt = dtTxt;
-    }
 }

@@ -35,7 +35,7 @@ public class MeteoController {
 
     }
 
-    @GetMapping("/coordinate")
+    @PostMapping("/coordinate")
     public ResponseEntity<GenericResponse> coordinate(@Valid @RequestBody MeteoRequest request){
         Optional<Weather> result = service.getCoordinate(request);
 
@@ -47,7 +47,7 @@ public class MeteoController {
 
     }
 
-    @GetMapping("/cap")
+    @PostMapping("/cap")
     public ResponseEntity<GenericResponse> cap(@Valid @RequestBody MeteoRequest request){
         Optional<Weather> result = service.getZipCode(request);
 
@@ -59,7 +59,7 @@ public class MeteoController {
 
     }
 
-    @GetMapping("/city5day")
+    @PostMapping("/city5day")
     public ResponseEntity<GenericResponse> city5Days(@Valid @RequestBody MeteoRequest request){
         Optional<Forecast> result = service.get5DaysCity(request);
 
@@ -72,7 +72,7 @@ public class MeteoController {
 
     }
 
-    @GetMapping("/coordinate5day")
+    @PostMapping("/coordinate5day")
     public ResponseEntity<GenericResponse> coordinate5Days(@Valid @RequestBody MeteoRequest request){
 
         Optional<Forecast> result = service.get5DaysCoordinate(request);
@@ -86,7 +86,7 @@ public class MeteoController {
 
     }
 
-    @GetMapping("/cap5day")
+    @PostMapping("/cap5day")
     public ResponseEntity<GenericResponse> cap5Days(@Valid @RequestBody MeteoRequest request){
 
         Optional<Forecast> result = service.get5DaysZipCode(request);

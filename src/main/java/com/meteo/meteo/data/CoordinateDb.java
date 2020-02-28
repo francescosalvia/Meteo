@@ -15,9 +15,18 @@ public class CoordinateDb {
     private float lat;
     private float lon;
     private int idWeather;
+    private int idForecast;
     private String tipo;
     private LocalDateTime scadenza;
     public CoordinateDb() {
+    }
+
+    public int getIdForecast() {
+        return idForecast;
+    }
+
+    public void setIdForecast(int idForecast) {
+        this.idForecast = idForecast;
     }
 
     public int getIdCoord() {

@@ -3,9 +3,7 @@ package com.meteo.meteo.service;
 import com.google.common.collect.Iterables;
 import com.meteo.meteo.data.*;
 import com.meteo.meteo.properties.MeteoProperties;
-import com.meteo.meteo.repository.CoordinateRepository;
-import com.meteo.meteo.repository.LocationRepository;
-import com.meteo.meteo.repository.WeatherRepository;
+import com.meteo.meteo.repository.*;
 import com.meteo.meteo.request.MeteoRequest;
 import org.apache.http.ParseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -51,6 +49,12 @@ public class MeteoService {
 
     @Autowired
     private CoordinateRepository coordinateRepository;
+
+    @Autowired
+    private ForecastRepository forecastRepository;
+
+    @Autowired
+    private ForecastInfoListRepository forecastInfoListRepository;
 
 
     /**
@@ -171,7 +175,7 @@ public class MeteoService {
 
             JSONArray jArr = myObject.getJSONArray("list");
 
-            ArrayList<ForecastListInfo> listInfo = new ArrayList<>();
+            List<ForecastListInfo> listInfo = new ArrayList<>();
 
             for (int i = 0; i < jArr.length(); i++) {
 
@@ -193,6 +197,67 @@ public class MeteoService {
                 forecastListInfo.setTemp(getFloat("temp", mainObj));
                 forecastListInfo.setPressure(getInt("pressure", mainObj));
                 forecastListInfo.setFeelsLike(getFloat("feels_like", mainObj));
+                forecastListInfo.setIdList(i);
+
+                forecastListInfo.setDtTxt(getDate(JSONArray.getString("dt_txt")));
+
+                listInfo.add(forecastListInfo);
+            }
+
+            forecast.setCoordinate(co);
+            forecast.setLocation(loc);
+            forecast.setListInfo(listInfo);
+
+            return Optional.of(forecast);
+        } catch (JSONException e) {
+            logger.error("Eccezione JSONException in getCity ", e);
+        }
+        return Optional.empty();
+    }
+
+
+    public Optional<Forecast> createWether5DaysCoordinate(JSONObject myObject,MeteoRequest mr) {
+        try {
+            Location loc = new Location();
+            Coordinate co = new Coordinate();
+            Forecast forecast = new Forecast();
+
+
+            JSONObject sysObj = getObject("city", myObject);
+            loc.setTimezone(getInt("timezone", sysObj));
+            loc.setCitta(getString("name", sysObj));
+            loc.setCountry(getString("country", sysObj));
+            forecast.setSunset(getInt("sunset", sysObj));
+            forecast.setSunrise(getInt("sunrise", sysObj));
+
+            co.setLat(mr.getLatitudine());
+            co.setLon(mr.getLongitudine());
+
+            JSONArray jArr = myObject.getJSONArray("list");
+
+            List<ForecastListInfo> listInfo = new ArrayList<>();
+
+            for (int i = 0; i < jArr.length(); i++) {
+
+                ForecastListInfo forecastListInfo = new ForecastListInfo();
+                JSONObject JSONArray = jArr.getJSONObject(i);
+
+                JSONArray jArrWether = JSONArray.getJSONArray("weather");
+
+                JSONObject JSONWeather = jArrWether.getJSONObject(0);
+
+                forecastListInfo.setWeatherDescription(getString("description", JSONWeather));
+
+                JSONObject mainObj = getObject("main", JSONArray);
+
+                forecastListInfo.setHumidity(getInt("humidity", mainObj));
+                forecastListInfo.setPressure(getInt("pressure", mainObj));
+                forecastListInfo.setTempMax(getFloat("temp_max", mainObj));
+                forecastListInfo.setTempMin(getFloat("temp_min", mainObj));
+                forecastListInfo.setTemp(getFloat("temp", mainObj));
+                forecastListInfo.setPressure(getInt("pressure", mainObj));
+                forecastListInfo.setFeelsLike(getFloat("feels_like", mainObj));
+                forecastListInfo.setIdList(i);
 
                 forecastListInfo.setDtTxt(getDate(JSONArray.getString("dt_txt")));
 
@@ -230,7 +295,7 @@ public class MeteoService {
     }
 
     public void addCoordinate(Weather weather, int id, String tipo) {
-        Coordinate coordinate = new Coordinate();
+        CoordinateDb coordinate = new CoordinateDb();
         coordinate.setLat(weather.getCoordinate().getLat());
         coordinate.setLon(weather.getCoordinate().getLon());
         coordinate.setIdWeather(id);
@@ -240,7 +305,7 @@ public class MeteoService {
     }
 
     public void addLocation(Weather weather, int id, String tipo) {
-        Location location = new Location();
+        LocationDb location = new LocationDb();
 
         location.setTimezone(weather.getLocation().getTimezone());
         location.setCitta(weather.getLocation().getCitta());
@@ -252,7 +317,7 @@ public class MeteoService {
     }
 
     public void addLocationZipCode(Weather weather, int id, String tipo,String zipcode) {
-        Location location = new Location();
+        LocationDb location = new LocationDb();
 
         location.setTimezone(weather.getLocation().getTimezone());
         location.setCitta(weather.getLocation().getCitta());
@@ -267,12 +332,23 @@ public class MeteoService {
 
     public Optional<Weather> returnDB(WeatherDb lastElement) {
 
-        Optional<Coordinate> coordinateDB = coordinateRepository.findCoordinateByIdWeather(lastElement.getId());
-        Optional<Location> locationDB = locationRepository.findLocationByIdWeather(lastElement.getId());
+        Optional<CoordinateDb> coordinateDB = coordinateRepository.findCoordinateDbByIdWeather(lastElement.getId());
+        Optional<LocationDb> locationDB = locationRepository.findLocationDbByIdWeather(lastElement.getId());
         if (coordinateDB.isPresent()) {
-            Coordinate coordinate = coordinateDB.get();
+
+            CoordinateDb coord = coordinateDB.get();
+            Coordinate coordinate = new Coordinate();
+            coordinate.setLon(coord.getLon());
+            coordinate.setLat(coord.getLat());
+
             if (locationDB.isPresent()) {
-                Location location = locationDB.get();
+
+                LocationDb locat = locationDB.get();
+
+                Location location = new Location();
+                location.setCitta(locat.getCitta());
+                location.setCountry(locat.getCountry());
+                location.setTimezone(locat.getTimezone());
 
                 Weather weatherReturn = new Weather();
 
@@ -299,9 +375,9 @@ public class MeteoService {
 
         List<WeatherDb> weatherDb = new ArrayList<>();
 
-        List<Location> listCitta = locationRepository.findLocationByCitta(citta);
+        List<LocationDb> listCitta = locationRepository.findLocationDbByCittaAndTipo(citta,tipo);
         if (listCitta.size() > 0) {
-            Location lastCitta = Iterables.getLast(listCitta);
+            LocationDb lastCitta = Iterables.getLast(listCitta);
             weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastCitta.getIdWeather());
         }
 
@@ -323,9 +399,9 @@ public class MeteoService {
 
         List<WeatherDb> weatherDb = new ArrayList<>();
 
-        List<Coordinate> listCoordinate = coordinateRepository.findCoordinateByTipoAndLatAndLon(tipo,latitudine,longitudine);
+        List<CoordinateDb> listCoordinate = coordinateRepository.findCoordinateDbByTipoAndLatAndLon(tipo,latitudine,longitudine);
         if (listCoordinate.size() > 0) {
-            Coordinate lastCoord = Iterables.getLast(listCoordinate);
+            CoordinateDb lastCoord = Iterables.getLast(listCoordinate);
             weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastCoord.getIdWeather());
         }
 
@@ -348,9 +424,9 @@ public class MeteoService {
 
         List<WeatherDb> weatherDb = new ArrayList<>();
 
-        List<Location> locations = locationRepository.findLocationByTipoAndZipCode(tipo,zipcode);
+        List<LocationDb> locations = locationRepository.findLocationDbByTipoAndZipCode(tipo,zipcode);
         if (locations.size() > 0) {
-            Location lastZip = Iterables.getLast(locations);
+            LocationDb lastZip = Iterables.getLast(locations);
             weatherDb = weatherRepository.findWeatherDbByTipoMetodoAndId(tipo,lastZip.getIdWeather());
         }
 
@@ -385,6 +461,7 @@ public class MeteoService {
             return weatherSearch;
         }
 
+
         logger.info("getCity");
         String meteo_url = meteoProperties.getUrlWeather() + "q={city name},{state},{country code}&appid={your api key}";
 
@@ -404,10 +481,13 @@ public class MeteoService {
             Optional<Weather> weather = createWether(myObject);
 
             if (weather.isPresent()) {
+
                 WeatherDb weather1 = addWeather(weather.get(), "city");
                 addCoordinate(weather.get(), weather1.getId(),"city");
                 addLocation(weather.get(), weather1.getId(),"city");
             }
+
+
 
             logger.info(json2);
             client.close();
@@ -519,9 +599,17 @@ public class MeteoService {
 
 
     public Optional<Forecast> get5DaysCity(MeteoRequest mr) {
+
+
+        Optional<Forecast> forecastSearch = searchDBCity5day("city5Day", mr.getCitta());
+
+        if (forecastSearch.isPresent()) {
+            return forecastSearch;
+        }
+
         logger.info("get5DaysCity");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?q={city name},{state},{country code}&appid={your api key}";
-        String result = null;
+
         try {
             URI url = new UriTemplate(meteo_url).expand(mr.getCitta(), mr.getStato(),
                     mr.getCountry(), meteoProperties.getApikey());
@@ -536,6 +624,14 @@ public class MeteoService {
             JSONObject myObject = new JSONObject(json2);
 
             Optional<Forecast> forecast = createWether5Days(myObject);
+
+            if (forecast.isPresent()) {
+
+                ForecastDb forecastDb = addForecast(forecast.get(), "city5Day");
+                List<ForecastListInfoDb> forecastListInfo = addForecastInfo(forecast.get(),forecastDb.getId());
+                addCoordinateForecast(forecast.get(), forecastDb.getId(),"city5Day");
+                addLocationForecast(forecast.get(), forecastDb.getId(),"city5Day");
+            }
 
             logger.info(json2);
             client.close();
@@ -553,9 +649,17 @@ public class MeteoService {
 
 
     public Optional<Forecast> get5DaysCoordinate(MeteoRequest mr) {
+
+        Optional<Forecast> forecastSearch = searchDBCoordinate5Day("coordinate5Day",mr.getLatitudine(),mr.getLongitudine());
+
+        if (forecastSearch.isPresent()) {
+            return forecastSearch;
+        }
+
         logger.info("get5DaysCoordinate");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={your api key}";
-        String result = null;
+        
+
         try {
             URI url = new UriTemplate(meteo_url).expand(mr.getLatitudine(), mr.getLongitudine(), meteoProperties.getApikey());
 
@@ -568,7 +672,15 @@ public class MeteoService {
 
             JSONObject myObject = new JSONObject(json2);
 
-            Optional<Forecast> forecast = createWether5Days(myObject);
+            Optional<Forecast> forecast = createWether5DaysCoordinate(myObject,mr);
+
+            if (forecast.isPresent()) {
+
+                ForecastDb forecastDb = addForecast(forecast.get(), "coordinate5Day");
+                List<ForecastListInfoDb> forecastListInfo = addForecastInfo(forecast.get(),forecastDb.getId());
+                addCoordinateForecast(forecast.get(), forecastDb.getId(),"coordinate5Day");
+                addLocationForecast(forecast.get(), forecastDb.getId(),"coordinate5Day");
+            }
 
             logger.info(json2);
             client.close();
@@ -586,9 +698,16 @@ public class MeteoService {
     }
 
     public Optional<Forecast> get5DaysZipCode(MeteoRequest mr) {
+
+        Optional<Forecast> forecastSearch = searchDBZipCode5Day("zipCode5Day",mr.getCap());
+
+        if (forecastSearch.isPresent()) {
+            return forecastSearch;
+        }
+
         logger.info("get5DaysZipCode");
         String meteo_url = "http://api.openweathermap.org/data/2.5/forecast?zip={zip code},{country code}&appid={your api key}";
-        String result = null;
+
         try {
             URI url = new UriTemplate(meteo_url).expand(mr.getCap(), mr.getCountry(), meteoProperties.getApikey());
 
@@ -604,6 +723,14 @@ public class MeteoService {
 
             Optional<Forecast> forecast = createWether5Days(myObject);
 
+            if (forecast.isPresent()) {
+
+                ForecastDb forecastDb = addForecast(forecast.get(), "zipCode5Day");
+                List<ForecastListInfoDb> forecastListInfo = addForecastInfo(forecast.get(),forecastDb.getId());
+                addCoordinateForecast(forecast.get(), forecastDb.getId(),"zipCode5Day");
+                addLocationZipCodeForecast(forecast.get(), forecastDb.getId(),"zipCode5Day",mr.getCap());
+            }
+
             logger.info(json2);
             client.close();
 
@@ -618,6 +745,207 @@ public class MeteoService {
         }
         return Optional.empty();
     }
+
+
+    public Optional<Forecast> returnForecastDb(ForecastDb lastElement, List<ForecastListInfoDb> lista) {
+
+        Optional<CoordinateDb> coordinateDB = coordinateRepository.findCoordinateDbByIdForecast(lastElement.getId());
+        Optional<LocationDb> locationDB = locationRepository.findLocationDbByIdForecast(lastElement.getId());
+        if (coordinateDB.isPresent()) {
+
+            CoordinateDb coord = coordinateDB.get();
+            Coordinate coordinate = new Coordinate();
+            coordinate.setLon(coord.getLon());
+            coordinate.setLat(coord.getLat());
+
+            if (locationDB.isPresent()) {
+
+                LocationDb locat = locationDB.get();
+
+                Location location = new Location();
+                location.setCitta(locat.getCitta());
+                location.setCountry(locat.getCountry());
+                location.setTimezone(locat.getTimezone());
+
+                Forecast forecastReturn = new Forecast();
+                forecastReturn.setLocation(location);
+                forecastReturn.setCoordinate(coordinate);
+                forecastReturn.setSunrise(lastElement.getSunrise());
+                forecastReturn.setSunset(lastElement.getSunset());
+
+                List<ForecastListInfo> listaInfo = new ArrayList<>();
+                for (int i = 0; i < lista.size(); i++){
+                    ForecastListInfo info = new ForecastListInfo();
+                    info.setIdList(i);
+                    info.setPressure(lista.get(i).getPressure());
+                    info.setFeelsLike(lista.get(i).getFeelsLike());
+                    info.setHumidity(lista.get(i).getHumidity());
+                    info.setTemp(lista.get(i).getTemp());
+                    info.setTempMax(lista.get(i).getTempMax());
+                    info.setTempMin(lista.get(i).getTempMin());
+                    info.setWeatherDescription(lista.get(i).getWeatherDescription());
+                    info.setDtTxt(lista.get(i).getDtTxt());
+                    listaInfo.add(info);
+                }
+
+                forecastReturn.setListInfo(listaInfo);
+                return Optional.of(forecastReturn);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+    public Optional<Forecast> searchDBCity5day(String tipo, String citta) {
+
+        List<ForecastDb> forecastDb = new ArrayList<>();
+
+        List<LocationDb> listCitta = locationRepository.findLocationDbByCittaAndTipo(citta,tipo);
+        if (listCitta.size() > 0) {
+            LocationDb lastCitta = Iterables.getLast(listCitta);
+            forecastDb = forecastRepository.findForecastDbByTipoMetodoAndId(tipo,lastCitta.getIdForecast());
+        }
+
+        if (forecastDb.size() > 0) {
+            ForecastDb lastElement = Iterables.getLast(forecastDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                List<ForecastListInfoDb> lista = forecastInfoListRepository.findForecastListInfoDbByIdForecast(lastElement.getId());
+                 return returnForecastDb(lastElement, lista);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+
+    public Optional<Forecast> searchDBCoordinate5Day(String tipo, float latitudine, float longitudine) {
+
+        List<ForecastDb> forecastDb = new ArrayList<>();
+
+        List<CoordinateDb> listCoordinate = coordinateRepository.findCoordinateDbByTipoAndLatAndLon(tipo,latitudine,longitudine);
+        if (listCoordinate.size() > 0) {
+            CoordinateDb lastCoord = Iterables.getLast(listCoordinate);
+            forecastDb = forecastRepository.findForecastDbByTipoMetodoAndId(tipo,lastCoord.getIdForecast());
+        }
+
+        if (forecastDb.size() > 0) {
+            ForecastDb lastElement = Iterables.getLast(forecastDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                List<ForecastListInfoDb> lista = forecastInfoListRepository.findForecastListInfoDbByIdForecast(lastElement.getId());
+                return returnForecastDb(lastElement,lista);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+    public Optional<Forecast> searchDBZipCode5Day(String tipo, String zipcode) {
+
+        List<ForecastDb> forecastDb = new ArrayList<>();
+
+        List<LocationDb> locations = locationRepository.findLocationDbByTipoAndZipCode(tipo,zipcode);
+        if (locations.size() > 0) {
+            LocationDb lastZip = Iterables.getLast(locations);
+            forecastDb = forecastRepository.findForecastDbByTipoMetodoAndId(tipo,lastZip.getIdForecast());
+        }
+
+        if (forecastDb.size() > 0) {
+            ForecastDb lastElement = Iterables.getLast(forecastDb);
+
+            LocalDateTime ora = LocalDateTime.now();
+            long minuts = ChronoUnit.MINUTES.between(ora, lastElement.getScadenza());
+
+            if (minuts > 0) {
+                List<ForecastListInfoDb> lista = forecastInfoListRepository.findForecastListInfoDbByIdForecast(lastElement.getId());
+                return returnForecastDb(lastElement,lista);
+            }
+        }
+        logger.info("Nessun valore trovato");
+        return Optional.empty();
+    }
+
+
+
+    public ForecastDb addForecast(Forecast forecast, String tipo) {
+        ForecastDb forecastDb = new ForecastDb();
+
+        forecastDb.setSunrise(forecast.getSunrise());
+        forecastDb.setSunset(forecast.getSunset());
+        forecastDb.setTipoMetodo(tipo);
+        forecastDb.setScadenza(LocalDateTime.now().plusMinutes(120));
+
+        return forecastRepository.save(forecastDb);
+    }
+
+    public List<ForecastListInfoDb> addForecastInfo(Forecast forecast,int id){
+        List<ForecastListInfoDb> list = new ArrayList<>();
+
+        for(int i = 0; i < forecast.getListInfo().size(); i++)
+        {
+            ForecastListInfoDb forecastListInfo = new ForecastListInfoDb();
+            ForecastListInfo fr = forecast.getListInfo().get(i);
+            forecastListInfo.setWeatherDescription(fr.getWeatherDescription());
+            forecastListInfo.setFeelsLike(fr.getFeelsLike());
+            forecastListInfo.setTemp(fr.getTemp());
+            forecastListInfo.setHumidity(fr.getHumidity());
+            forecastListInfo.setPressure(fr.getPressure());
+            forecastListInfo.setTempMax(fr.getTempMax());
+            forecastListInfo.setTempMin(fr.getTempMin());
+            forecastListInfo.setDtTxt(fr.getDtTxt());
+            forecastListInfo.setIdForecast(id);
+            forecastListInfo.setIdList(i);
+            list.add(forecastListInfo);
+            forecastInfoListRepository.save(forecastListInfo);
+        }
+        return list;
+    }
+
+    public void addCoordinateForecast(Forecast forecast, int id, String tipo) {
+        CoordinateDb coordinate = new CoordinateDb();
+        coordinate.setLat(forecast.getCoordinate().getLat());
+        coordinate.setLon(forecast.getCoordinate().getLon());
+        coordinate.setIdForecast(id);
+        coordinate.setTipo(tipo);
+        coordinate.setScadenza(LocalDateTime.now().plusMinutes(120));
+        coordinateRepository.save(coordinate);
+    }
+
+    public void addLocationForecast(Forecast forecast, int id, String tipo) {
+        LocationDb location = new LocationDb();
+
+        location.setTimezone(forecast.getLocation().getTimezone());
+        location.setCitta(forecast.getLocation().getCitta());
+        location.setCountry(forecast.getLocation().getCountry());
+        location.setIdForecast(id);
+        location.setTipo(tipo);
+        location.setScadenza(LocalDateTime.now().plusMinutes(120));
+        locationRepository.save(location);
+    }
+
+
+
+    public void addLocationZipCodeForecast(Forecast forecast, int id, String tipo,String zipcode) {
+        LocationDb location = new LocationDb();
+
+        location.setTimezone(forecast.getLocation().getTimezone());
+        location.setCitta(forecast.getLocation().getCitta());
+        location.setCountry(forecast.getLocation().getCountry());
+        location.setIdForecast(id);
+        location.setTipo(tipo);
+        location.setScadenza(LocalDateTime.now().plusMinutes(120));
+        location.setZipCode(zipcode);
+        locationRepository.save(location);
+    }
+
+
 
 
 }
